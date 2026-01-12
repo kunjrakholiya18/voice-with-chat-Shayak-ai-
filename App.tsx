@@ -22,10 +22,8 @@ type AppView = 'chat' | 'magic';
 type ThemeMode = 'light' | 'dark';
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('sahayak_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // Always start at the auth screen on app load (do not auto-login from localStorage)
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const savedTheme = localStorage.getItem('sahayak_theme') as ThemeMode;
@@ -88,7 +86,6 @@ I can help you in both Hindi and English.`,
     setManualApiKey(apiKey);
     const newUser = { name };
     setCurrentUser(newUser);
-    localStorage.setItem('sahayak_user', JSON.stringify(newUser));
   };
 
   const handleLogout = () => {
