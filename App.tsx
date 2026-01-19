@@ -237,14 +237,25 @@ Here is your image, ${currentUser.name}!`,
               </div>
             </button>
 
-            <button 
-              onClick={() => setIsLiveMode(true)} 
+            <button
+              onClick={() => setIsLiveMode(true)}
               className={`w-full flex items-center gap-4 p-4 rounded-[1.8rem] transition-all duration-300 border ${theme === 'dark' ? 'border-teal-500/20 hover:bg-teal-500/5 hover:border-teal-500/50' : 'border-teal-200 hover:bg-teal-50 hover:border-teal-400'} hover:scale-[1.05]`}
             >
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${theme === 'dark' ? 'bg-teal-500/20 text-teal-400' : 'bg-teal-100 text-teal-600'}`}>🎙️</div>
               <div className="text-left">
                 <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-teal-400/70' : 'text-teal-600/70'}`}>Real-time</p>
                 <p className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Voice Mode</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => window.open('https://sahayak-2-0.vercel.app/', '_blank')}
+              className={`w-full flex items-center gap-4 p-4 rounded-[1.8rem] transition-all duration-300 border ${theme === 'dark' ? 'border-orange-500/20 hover:bg-orange-500/5 hover:border-orange-500/50' : 'border-orange-200 hover:bg-orange-50 hover:border-orange-400'} hover:scale-[1.05]`}
+            >
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'}`}>🤖</div>
+              <div className="text-left">
+                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-orange-400/70' : 'text-orange-600/70'}`}>Next Gen</p>
+                <p className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Sahayak 2.0</p>
               </div>
             </button>
           </div>
