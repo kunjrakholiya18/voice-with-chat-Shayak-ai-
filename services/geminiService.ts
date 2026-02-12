@@ -1,104 +1,115 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-/**
- * Generate a language-matched response (English or Hindi) 
- * based on the user's input language.
- */
-export const generateBilingualResponse = async (
-  userName: string, 
-  userMessage: string, 
-  history: { role: 'user' | 'model', parts: { text: string }[] }[],
-  imageData?: { data: string, mimeType: string }
-) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  const systemInstruction = `
-    Your name is 'Sahayak'. You are an expert and deeply knowledgeable personal AI assistant for ${userName}.
-    
-    STRICT LANGUAGE RULES:
-    1. Detect the language of the user's message.
-    2. If the user speaks English -> Respond ONLY in English.
-    3. If the user speaks Hindi/Hinglish -> Respond ONLY in Hindi.
-    4. NEVER provide bilingual responses unless specifically asked.
-    
-    DETAIL & DEPTH RULES:
-    1. Provide EXTREMELY DETAILED, comprehensive, and thorough explanations. 
-    2. DO NOT be concise. Give as much information as possible to satisfy the query fully.
-    3. Use formatting like bullet points, headers, or numbered lists to make long, detailed answers easy to read.
-    
-    GREETING RULES:
-    1. DO NOT repeat greetings like "Hello ${userName}" or "नमस्ते ${userName}" in every single message.
-    2. Only greet the user if it is the very beginning of the session or if they specifically greet you. 
-    3. For follow-up questions, dive straight into the detailed answer without repeating the greeting.
-    
-    TONE:
-    Be professional, intellectual, and highly supportive.
-  `;
+let manualApiKey: string | null = typeof window !== 'undefined' ? localStorage.getItem('sahayak_api_key') : null;
 
-  const currentParts: any[] = [];
-  
-  if (imageData) {
-    currentParts.push({
-      inlineData: {
-        data: imageData.data,
-        mimeType: imageData.mimeType
-      }
-    });
-  }
-  
-  currentParts.push({ text: userMessage || "Hello!" });
-
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // Upgraded to Pro for more detailed reasoning
-      contents: [
-        ...history,
-        { role: 'user', parts: currentParts }
-      ],
-      config: {
-        systemInstruction,
-        temperature: 0.8, // Slightly higher for more detailed creative output
-      },
-    });
-
-    return { text: response.text || "I apologize, I couldn't generate a response." };
-  } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    throw new Error("Sahayak connection failed. Please check your internet connection.");
+export const setManualApiKey = (key: string) => {
+  manualApiKey = key?.trim();
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('sahayak_api_key', key?.trim());
   }
 };
 
 /**
- * Generate images based on text prompts.
+ * Gets the effective API key, strictly filtering out empty or placeholder strings.
  */
-export const generateAIImage = async (prompt: string, referenceImage?: { data: string, mimeType: string }) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+export const getEffectiveApiKey = () => {
+  const key = manualApiKey || (typeof process !== 'undefined' ? process.env.API_KEY : null);
+  if (!key || key === 'undefined' || key === 'null' || key.trim() === '') return null;
+  return key;
+};
+
+export const generateBilingualResponse = async (
+  userName: string,
+  userMessage: string,
+  history: { role: 'user' | 'model', parts: { text: string }[] }[],
+  imageData?: { data: string, mimeType: string }
+) => {
+  const apiKey = getEffectiveApiKey();
+  if (!apiKey) throw new Error("API Key Missing. Please provide a key to connect to Sahayak.");
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const systemInstruction = `
+    Your name is 'Sahayak'. You are a high-performance personal AI assistant created by Kunj.
+    
+    RULES:
+    1. Respond in Hindi if the user speaks Hindi, English if they speak English. 
+    2. ALWAYS identify as being 'made by Kunj' (कुंज द्वारा बनाया गया) if greeted or asked who you are.
+    3. Be friendly and intelligent.
+    4. User Name: ${userName}.
+  `;
+
+  const currentParts: any[] = [];
+  if (imageData) currentParts.push({ inlineData: { data: imageData.data, mimeType: imageData.mimeType } });
+  currentParts.push({ text: userMessage || "Hello!" });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: [...history, { role: 'user', parts: currentParts }],
+      config: { systemInstruction, temperature: 0.8 },
+    });
+    return { text: response.text || "No response received." };
+  } catch (error: any) {
+    console.error("Gemini API Error:", error);
+    const msg = error.message?.toLowerCase() || "";
+    if (msg.includes("401") || msg.includes("key not found")) throw new Error("Invalid API Key. Please update your settings.");
+    if (msg.includes("403") || msg.includes("permission") || msg.includes("billing")) throw new Error("Paid Tier Required: This model requires an API key from a project with billing enabled in AI Studio.");
+    if (msg.includes("network error") || msg.includes("failed to fetch")) throw new Error("Neural link interrupted. Please check your internet connection.");
+    throw error;
+  }
+};
+
+export const generateAIImage = async (prompt: string, aspectRatio: string = "1:1", inputImage?: { data: string, mimeType: string }, styleReferenceImage?: { data: string, mimeType: string }) => {
+  const apiKey = getEffectiveApiKey();
+  if (!apiKey) throw new Error("API Key Missing");
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const parts: any[] = [];
-    if (referenceImage) {
-      parts.push({ inlineData: { data: referenceImage.data, mimeType: referenceImage.mimeType } });
-      parts.push({ text: `Modify this image: ${prompt}` });
-    } else {
-      parts.push({ text: prompt });
+
+    // Add Input Image (Subject)
+    if (inputImage) {
+      parts.push({ inlineData: { data: inputImage.data, mimeType: inputImage.mimeType } });
     }
+
+    // Add Style Reference Image
+    if (styleReferenceImage) {
+      parts.push({ inlineData: { data: styleReferenceImage.data, mimeType: styleReferenceImage.mimeType } });
+    }
+
+    // Construct Text Prompt
+    let fullPrompt = prompt;
+    if (inputImage && styleReferenceImage) {
+      fullPrompt = `[IMAGE 1 is the INPUT SUBJECT. IMAGE 2 is the STYLE/BACKGROUND REFERENCE]. 
+        Task: Modify the INPUT SUBJECT (Image 1) to match the style and background of the REFERENCE IMAGE (Image 2).
+        User Prompt: ${prompt}`;
+    } else if (inputImage) {
+      fullPrompt = `Modify this image: ${prompt}`;
+    } else if (styleReferenceImage) {
+      fullPrompt = `Create an image based on this reference style: ${prompt}`;
+    }
+
+    parts.push({ text: fullPrompt });
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: { parts },
+      config: { imageConfig: { aspectRatio } }
     });
 
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        }
+        if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
       }
     }
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Image Gen Error:", error);
+    const msg = error.message?.toLowerCase() || "";
+    if (msg.includes("403") || msg.includes("billing")) throw new Error("Paid Tier Required for Image Generation.");
     throw error;
   }
 };

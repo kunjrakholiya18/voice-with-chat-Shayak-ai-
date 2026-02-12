@@ -17,6 +17,17 @@
             fontFamily: {
               sans: ['Inter', 'Noto Sans Devanagari', 'sans-serif'],
             },
+            animation: {
+              'pulse-slow': 'pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float-slow': 'floatBackground 20s ease-in-out infinite',
+            },
+            keyframes: {
+              floatBackground: {
+                '0%, 100% { transform: translate(0, 0) scale(1); }',
+                '33% { transform: translate(2%, 4%) scale(1.1); }',
+                '66% { transform: translate(-3%, -2%) scale(0.9); }',
+              }
+            }
           },
         },
       }
@@ -25,17 +36,10 @@
       body {
         margin: 0;
         overflow: hidden;
-        transition: background-color 0.5s ease;
-      }
-      .dark body {
-        background-color: #000;
-      }
-      .light body {
-        background-color: #fff;
       }
       .glass-card {
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
       }
       ::-webkit-scrollbar {
         width: 6px;
@@ -51,6 +55,17 @@
         background: rgba(0, 0, 0, 0.1);
         border-radius: 10px;
       }
+      /* Cinematic background dots */
+      .bg-dots {
+        background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+      .dark body {
+        background-color: #020617;
+      }
+      .light body {
+        background-color: #f8fafc;
+      }
     </style>
   <script type="importmap">
 {
@@ -64,10 +79,9 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="dark">
+  <body>
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="./index.tsx"></script>
+  </body>
 </html>

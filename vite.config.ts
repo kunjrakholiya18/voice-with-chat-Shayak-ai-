@@ -8,11 +8,11 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY)
+      'process.env': JSON.stringify(env)
     },
     server: {
       port: 5173,
-      strictPort: true,
+      strictPort: false,
     }
   };
 });
