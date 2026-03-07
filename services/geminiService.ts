@@ -61,7 +61,14 @@ export const generateBilingualResponse = async (
   }
 };
 
-export const generateAIImage = async (prompt: string, aspectRatio: string = "1:1", inputImage?: { data: string, mimeType: string }, styleReferenceImage?: { data: string, mimeType: string }) => {
+export const generateAIImage = async (
+  prompt: string,
+  aspectRatio: string = "1:1",
+  inputImage?: { data: string, mimeType: string },
+  styleReferenceImage?: { data: string, mimeType: string },
+  isWhiteBackground: boolean = false,
+  isDesignMode: boolean = false
+) => {
   const apiKey = getEffectiveApiKey();
   if (!apiKey) throw new Error("API Key Missing");
 
@@ -82,14 +89,30 @@ export const generateAIImage = async (prompt: string, aspectRatio: string = "1:1
 
     // Construct Text Prompt
     let fullPrompt = prompt;
+    let systemModifiers = "";
+
+    // Add Mode Modifiers
+    if (isDesignMode) {
+      systemModifiers += " [DESIGN MODE ACTIVE: Focus strictly on the PRODUCT DESIGN (e.g. jewelry, object). REMOVE all mannequins, stands, human skin, necks, and cluttered backgrounds. Isolate the object completely. Output should look like a high-end clean catalog shot or 3D render.]";
+    }
+    if (isWhiteBackground) {
+      systemModifiers += " [WHITE BACKGROUND MODE: The background MUST be pure white (#FFFFFF). Remove all other background elements.]";
+    }
+
     if (inputImage && styleReferenceImage) {
       fullPrompt = `[IMAGE 1 is the INPUT SUBJECT. IMAGE 2 is the STYLE/BACKGROUND REFERENCE]. 
-        Task: Modify the INPUT SUBJECT (Image 1) to match the style and background of the REFERENCE IMAGE (Image 2).
-        User Prompt: ${prompt}`;
+        Task: Transfer the PRODUCT DESIGN from Image 1 onto the STYLE and BACKGROUND of Image 2.
+        1. Keep the SHAPE and DESIGN of the subject from Image 1 EXACTLY as is.
+        2. Apply the LIGHTING, BACKGROUND, and MATERIAL RENDERING style from Image 2 to the subject from Image 1.
+        3. If Design Mode is active, ensure no mannequins or stands from Image 1 are preserved.
+        User Prompt: ${prompt}
+        ${systemModifiers}`;
     } else if (inputImage) {
-      fullPrompt = `Modify this image: ${prompt}`;
+      fullPrompt = `Modify this image: ${prompt} ${systemModifiers}`;
     } else if (styleReferenceImage) {
-      fullPrompt = `Create an image based on this reference style: ${prompt}`;
+      fullPrompt = `Create an image based on this reference style: ${prompt} ${systemModifiers}`;
+    } else {
+      fullPrompt = `${prompt} ${systemModifiers}`;
     }
 
     parts.push({ text: fullPrompt });
